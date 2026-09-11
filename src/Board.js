@@ -1,7 +1,7 @@
 import React from 'react';
 import Dragula from 'dragula';
 import 'dragula/dist/dragula.css';
-import Swimlane from './Swimlane';
+import Swimlane from './Swimlane'; // Kept your original import path
 import './Board.css';
 
 export default class Board extends React.Component {
@@ -15,31 +15,66 @@ export default class Board extends React.Component {
         complete: clients.filter(client => client.status && client.status === 'complete'),
       }
     }
+    
+    // Create refs so Dragula knows exactly which DOM nodes to use as drop zones
     this.swimlanes = {
       backlog: React.createRef(),
       inProgress: React.createRef(),
       complete: React.createRef(),
     }
   }
+
+  componentDidMount() {
+    // Initialize drag-and-drop functionality across the three swimlane containers
+    this.drake = Dragula([
+      this.swimlanes.backlog.current,
+      this.swimlanes.inProgress.current,
+      this.swimlanes.complete.current,
+    ]);
+
+    // Handle color changes when a card is dropped into a new lane
+    this.drake.on('drop', (el, target) => {
+      // Reset to base class first
+      el.className = 'Card'; 
+      
+      // Apply correct color class based on the target container
+      if (target === this.swimlanes.inProgress.current) {
+        el.classList.add('Card-blue');
+      } else if (target === this.swimlanes.complete.current) {
+        el.classList.add('Card-green');
+      } else {
+        el.classList.add('Card-grey');
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    // Clean up memory and remove listeners when component is destroyed
+    if (this.drake) {
+      this.drake.destroy();
+    }
+  }
+
   getClients() {
     return [
-      ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
-      ['2','Wiza LLC','Exclusive Bandwidth-Monitored Implementation', 'complete'],
+      // Per the Acceptance Criteria: ALL tasks must start in the backlog swimlane
+      ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'backlog'],
+      ['2','Wiza LLC','Exclusive Bandwidth-Monitored Implementation', 'backlog'],
       ['3','Nolan LLC','Vision-Oriented 4Thgeneration Graphicaluserinterface', 'backlog'],
-      ['4','Thompson PLC','Streamlined Regional Knowledgeuser', 'in-progress'],
-      ['5','Walker-Williamson','Team-Oriented 6Thgeneration Matrix', 'in-progress'],
+      ['4','Thompson PLC','Streamlined Regional Knowledgeuser', 'backlog'],
+      ['5','Walker-Williamson','Team-Oriented 6Thgeneration Matrix', 'backlog'],
       ['6','Boehm and Sons','Automated Systematic Paradigm', 'backlog'],
       ['7','Runolfsson, Hegmann and Block','Integrated Transitional Strategy', 'backlog'],
       ['8','Schumm-Labadie','Operative Heuristic Challenge', 'backlog'],
       ['9','Kohler Group','Re-Contextualized Multi-Tasking Attitude', 'backlog'],
       ['10','Romaguera Inc','Managed Foreground Toolset', 'backlog'],
-      ['11','Reilly-King','Future-Proofed Interactive Toolset', 'complete'],
+      ['11','Reilly-King','Future-Proofed Interactive Toolset', 'backlog'],
       ['12','Emard, Champlin and Runolfsdottir','Devolved Needs-Based Capability', 'backlog'],
-      ['13','Fritsch, Cronin and Wolff','Open-Source 3Rdgeneration Website', 'complete'],
+      ['13','Fritsch, Cronin and Wolff','Open-Source 3Rdgeneration Website', 'backlog'],
       ['14','Borer LLC','Profit-Focused Incremental Orchestration', 'backlog'],
-      ['15','Emmerich-Ankunding','User-Centric Stable Extranet', 'in-progress'],
-      ['16','Willms-Abbott','Progressive Bandwidth-Monitored Access', 'in-progress'],
-      ['17','Brekke PLC','Intuitive User-Facing Customerloyalty', 'complete'],
+      ['15','Emmerich-Ankunding','User-Centric Stable Extranet', 'backlog'],
+      ['16','Willms-Abbott','Progressive Bandwidth-Monitored Access', 'backlog'],
+      ['17','Brekke PLC','Intuitive User-Facing Customerloyalty', 'backlog'],
       ['18','Bins, Toy and Klocko','Integrated Assymetric Software', 'backlog'],
       ['19','Hodkiewicz-Hayes','Programmable Systematic Securedline', 'backlog'],
       ['20','Murphy, Lang and Ferry','Organized Explicit Access', 'backlog'],
@@ -50,9 +85,11 @@ export default class Board extends React.Component {
       status: companyDetails[3],
     }));
   }
-  renderSwimlane(name, clients, ref) {
+
+  // Added the status parameter so cards initialize with the correct color
+  renderSwimlane(name, clients, ref, status) {
     return (
-      <Swimlane name={name} clients={clients} dragulaRef={ref}/>
+      <Swimlane name={name} clients={clients} dragulaRef={ref} status={status} />
     );
   }
 
@@ -62,13 +99,13 @@ export default class Board extends React.Component {
         <div className="container-fluid">
           <div className="row">
             <div className="col-md-4">
-              {this.renderSwimlane('Backlog', this.state.clients.backlog, this.swimlanes.backlog)}
+              {this.renderSwimlane('Backlog', this.state.clients.backlog, this.swimlanes.backlog, 'backlog')}
             </div>
             <div className="col-md-4">
-              {this.renderSwimlane('In Progress', this.state.clients.inProgress, this.swimlanes.inProgress)}
+              {this.renderSwimlane('In Progress', this.state.clients.inProgress, this.swimlanes.inProgress, 'in-progress')}
             </div>
             <div className="col-md-4">
-              {this.renderSwimlane('Complete', this.state.clients.complete, this.swimlanes.complete)}
+              {this.renderSwimlane('Complete', this.state.clients.complete, this.swimlanes.complete, 'complete')}
             </div>
           </div>
         </div>
